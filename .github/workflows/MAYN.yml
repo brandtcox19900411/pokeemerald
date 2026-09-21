@@ -1,0 +1,39 @@
+name: Build Pokeemerald Expansion
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch and switch to expansion 1.17.0 branch
+        run: |
+          git remote add upstream https://github.com/rh-hideout/pokeemerald-expansion.git || true
+          git fetch upstream expansion/1.17.0
+          git checkout -B expansion/1.17.0 upstream/expansion/1.17.0
+
+      - name: Install build tools and ARM compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-arm-none-eabi g++ libpng-dev make
+
+      - name: Build and install agbcc
+        run: |
+          ./tools/agbcc/build.sh
+          ./tools/agbcc/install.sh .
+
+      - name: Compile GBA ROM
+        run: make -j$(nproc) DUMP_SYMS=0
+
+      - name: Upload compiled ROM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-1.17.0
+          path: pokeemerald.gba
