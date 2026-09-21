@@ -11,6 +11,7 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: 'tags/expansion/1.17.0'
 
       - name: Install build tools and ARM compiler
@@ -18,7 +19,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-arm-none-eabi g++ libpng-dev make
 
-      - name: Build C tools (scaninc, mapjson)
+      - name: Build C tools
         run: |
           make -C tools/scaninc
           make -C tools/ramscrgen
