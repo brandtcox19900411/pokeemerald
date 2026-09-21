@@ -1,11 +1,34 @@
-# Pokémon Emerald
+name: Build GBA ROM
 
-This is a decompilation of Pokémon Emerald.
+on:
+  workflow_dispatch:
 
-It builds the following ROM:
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-* [**pokeemerald.gba**](https://datomatic.no-intro.org/index.php?page=show_record&s=23&n=1961) `sha1: f3ae088181bf583e55daf962a92bb46f4f1d07b7`
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: 'expansion/1.17.0'
+          fetch-depth: 0
 
-To set up the repository, see [INSTALL.md](INSTALL.md).
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-arm-none-eabi libpng-dev libsqlite3-dev
 
-For contacts and other pret projects, see [pret.github.io](https://pret.github.io/).
+      - name: Build agbcc Compiler
+        run: |
+          ./build_agbcc.sh
+
+      - name: Build ROM
+        run: |
+          make -j$(nproc)
+
+      - name: Upload Built ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-expansion-1.17.0
+          path: pokeemerald.gba
