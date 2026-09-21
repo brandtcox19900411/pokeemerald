@@ -1,0 +1,32 @@
+name: Build Pokeemerald Expansion
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: 'tags/expansion/1.17.0'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libpng-dev make
+
+      - name: Build agbcc
+        run: |
+          ./tools/agbcc/build.sh
+          ./tools/agbcc/install.sh .
+
+      - name: Compile ROM
+        run: make -j$(nproc)
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: pokeemerald-1.17.0
+          path: pokeemerald.gba
