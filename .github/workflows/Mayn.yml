@@ -8,31 +8,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Fetch and checkout expansion 1.17.0
+      - name: Fetch and switch to expansion 1.17.0
         run: |
           git remote add upstream https://github.com/rh-hideout/pokeemerald-expansion.git || true
           git fetch upstream --tags
           git checkout expansion/1.17.0 || git checkout tags/expansion/1.17.0
 
-      - name: Install system build dependencies
+      - name: Install build tools and ARM compiler
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-arm-none-eabi g++ libpng-dev make
 
-      - name: Build C host tools
-        run: |
-          make -C tools/gbagfx
-          make -C tools/scaninc
-          make -C tools/ramscrgen
-          make -C tools/rsfont
-          make -C tools/aif2pcm
-
-      - name: Build and install agbcc compiler
+      - name: Build and install agbcc
         run: |
           ./tools/agbcc/build.sh
           ./tools/agbcc/install.sh .
