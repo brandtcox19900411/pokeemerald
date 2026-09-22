@@ -1,0 +1,36 @@
+name: C/C++ CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Expansion 1.17.0 directly
+        uses: actions/checkout@v4
+        with:
+          repository: 'rh-hideout/pokeemerald-expansion'
+          ref: 'expansion/1.17.0'
+
+      - name: Install build tools and ARM compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-arm-none-eabi libpng-dev make
+
+      - name: Build and install agbcc
+        run: |
+          chmod +x tools/agbcc/build.sh tools/agbcc/install.sh
+          ./tools/agbcc/build.sh
+          ./tools/agbcc/install.sh .
+
+      - name: Compile GBA ROM
+        run: make -j$(nproc) DUMP_SYMS=0
+
+      - name: Upload compiled ROM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-1.17.0
+          path: pokeemerald.gba
+          
