@@ -1,0 +1,52 @@
+name: Build Pokeemerald Expansion
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch Upstream Tags & Switch to Expansion 1.17.0
+        run: |
+          git remote add upstream https://github.com/rh-hideout/pokeemerald-expansion.git || true
+          git fetch upstream --tags
+          git checkout tags/expansion/1.17.0 -b build-1.17.0
+
+      - name: Install System Dependencies & ARM Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential g++ gcc-arm-none-eabi libpng-dev make git pkg-config libarchive-tools
+
+      - name: Build and Install agbcc Compiler
+        run: |
+          ./tools/agbcc/build.sh
+          ./tools/agbcc/install.sh .
+
+      - name: Pre-build Host Tools
+        run: |
+          make -C tools/gbagfx
+          make -C tools/scaninc
+          make -C tools/ramscrgen
+          make -C tools/rsfont
+          make -C tools/aif2pcm
+          make -C tools/mid2agb
+          make -C tools/preproc
+          make -C tools/jsonproc
+          make -C tools/mapjson
+
+      - name: Compile GBA ROM
+        run: make -j$(nproc) DUMP_SYMS=0
+
+      - name: Upload Compiled ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-1.17.0
+          path: '*.gba'
