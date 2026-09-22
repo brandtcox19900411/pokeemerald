@@ -1,0 +1,43 @@
+name: C/C++ CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Expansion 1.17.0
+        uses: actions/checkout@v4
+        with:
+          repository: 'rh-hideout/pokeemerald-expansion'
+          ref: 'expansion/1.17.0'
+
+      - name: Install System Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-arm-none-eabi libpng-dev make git pkg-config m4
+
+      - name: Download Pre-compiled agbcc Binaries
+        run: |
+          mkdir -p tools/agbcc/bin
+          git clone https://github.com/pret/agbcc.git temp_agbcc
+          cp -r temp_agbcc/bin/* tools/agbcc/bin/
+          cp -r temp_agbcc/include tools/agbcc/
+          cp -r temp_agbcc/lib tools/agbcc/
+          chmod +x tools/agbcc/bin/*
+          rm -rf temp_agbcc
+
+      - name: Verify agbcc Executable
+        run: |
+          tools/agbcc/bin/agbcc --version || test -f tools/agbcc/bin/agbcc
+
+      - name: Compile GBA ROM
+        run: make -j$(nproc) DUMP_SYMS=0
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-1.17.0
+          path: pokeemerald.gba
