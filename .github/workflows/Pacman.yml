@@ -1,0 +1,38 @@
+name: C/C++ CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout Expansion 1.17.0
+        uses: actions/checkout@v4
+        with:
+          repository: 'rh-hideout/pokeemerald-expansion'
+          ref: 'expansion/1.17.0'
+
+      - name: Install Missing Package Tools
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm libpng make git gcc
+
+      - name: Download and Install Release agbcc
+        run: |
+          mkdir -p tools/agbcc
+          curl -sL https://github.com/pret/agbcc/releases/download/release/agbcc.tar.gz | tar -xz -C tools/agbcc
+          chmod +x tools/agbcc/bin/*
+
+      - name: Build Host Tools and Compile GBA ROM
+        run: |
+          make -j$(nproc) DUMP_SYMS=0
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokeemerald-1.17.0
+          path: pokeemerald.gba
